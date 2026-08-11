@@ -345,7 +345,7 @@ console.log ("客户端断开",socket.id);
 });
 });
 
-const PORT=3000;
+const PORT = process.env.PORT || 3000;
 server.listen(PORT,"0.0.0.0",()=>{
 console.log("服务启动成功");
 console.log("监听：0.0.0.0:" + PORT);
