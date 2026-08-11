@@ -29,8 +29,8 @@ app.use (express.static ('./public'));
 app.use (cors ());
 app.use (bodyParser.json ());
 app.use (express.json ());
-// ============ multer 文件上传配置 ============
-const UPLOAD_DIR = path.join (__dirname, 'upload');
+// ============ multer 文件上传配置【适配OpenShift容器】 ============
+const UPLOAD_DIR = "/tmp/upload";
 if (!fs.existsSync (UPLOAD_DIR)) {
 fs.mkdirSync (UPLOAD_DIR, { recursive: true });
 }
@@ -346,9 +346,8 @@ console.log ("客户端断开",socket.id);
 });
 
 const PORT=3000;
-server.listen(PORT,()=>{
+server.listen(PORT,"0.0.0.0",()=>{
 console.log("服务启动成功");
-console.log("内网地址：http://127.0.0.1:" + PORT);
-console.log("公网地址：sj.frp.one:10281");
-console.log("后台地址：http://127.0.0.1:" + PORT + "/admin");
+console.log("监听：0.0.0.0:" + PORT);
+console.log("后台地址：/admin");
 });
