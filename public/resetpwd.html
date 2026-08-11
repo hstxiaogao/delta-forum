@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>三角洲行动论坛‑找回密码</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:system-ui,"Microsoft YaHei",sans-serif;}
+body{
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:16px;
+  background: linear-gradient(-45deg, #0f0c29,#302b63,#24243e,#1a2980,#26d0ce);
+  background-size: 400% 400%;
+  animation: gradientFlow 12s ease infinite;
+  background-attachment:fixed;
+}
+@keyframes gradientFlow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.card{
+  width:100%;
+  max-width:420px;
+  padding:36px 28px;
+  background:rgba(255,255,255,0.06);
+  backdrop-filter:blur(22px);
+  border:1px solid rgba(255,255,255,0.12);
+  border-radius:20px;
+  box-shadow:0 12px 45px rgba(0,0,0,0.35);
+}
+h2{
+  text-align:center;
+  font-size:24px;
+  margin-bottom:28px;
+  background:linear-gradient(90deg,#00f5a0,#00d9f5,#ff2a6d);
+  -webkit-background-clip:text;
+  color:transparent;
+}
+input{
+  width:100%;
+  padding:14px 16px;
+  margin:10px 0;
+  background:rgba(255,255,255,0.07);
+  border:1px solid rgba(255,255,255,0.12);
+  border-radius:12px;
+  color:#fff;
+  font-size:15px;
+  transition:0.3s;
+}
+input:focus{
+  outline:none;
+  border-color:#00f5a0;
+  box-shadow:0 0 0 4px rgba(0,245,160,0.15);
+}
+.btn{
+  width:100%;
+  padding:14px;
+  margin-top:12px;
+  border:none;
+  border-radius:12px;
+  font-size:16px;
+  font-weight:bold;
+  cursor:pointer;
+  background:linear-gradient(135deg,#00f5a0,#00d9f5);
+  color:#08111f;
+  box-shadow:0 6px 22px rgba(0,245,160,0.28);
+  transition:0.3s ease;
+}
+.btn:hover{
+  transform:translateY(-3px);
+  box-shadow:0 10px 30px rgba(0,245,160,0.4);
+}
+.btn:disabled{
+  opacity:0.45;
+  cursor:not-allowed;
+  transform:none;
+}
+.btn-small{
+  padding:10px;
+  font-size:14px;
+  margin-top:6px;
+}
+.link{
+  display:block;
+  text-align:center;
+  margin-top:20px;
+  color:#b8c8ff;
+  text-decoration:none;
+  transition:0.25s;
+}
+.link:hover{
+  color:#00f5a0;
+  text-shadow:0 0 8px rgba(0,245,160,0.5);
+}
+
+/* 自定义页面悬浮弹窗（代替alert） */
+#myModal{
+  display:none;
+  position:fixed;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  background:rgba(10,10,30,0.75);
+  z-index:9999;
+  align-items:center;
+  justify-content:center;
+  padding:16px;
+}
+.modal-inner{
+  width:100%;
+  max-width:340px;
+  background:#2b2855;
+  padding:32px 24px;
+  border-radius:18px;
+  border:1px solid #524e99;
+  box-shadow:0 0 24px #39348077;
+}
+#modalText{
+  color:#54ffd8;
+  text-align:center;
+  margin-bottom:24px;
+  font-size:17px;
+}
+.modal-btn{
+  width:100%;
+  padding:10px;
+  background:linear-gradient(90deg,#22e299,#08d0dd);
+  border:none;
+  border-radius:10px;
+  color:#000;
+  font-weight:bold;
+  font-size:15px;
+}
+</style>
+</head>
+<body>
+<div class="card">
+  <h2>🔑找回账号密码</h2>
+  <input type="email" id="email" placeholder="请输入注册邮箱">
+  <button id="sendCodeBtn" class="btn btn-small" onclick="sendResetCode()">发送验证码</button>
+  <input type="text" id="code" placeholder="邮箱收到的6位验证码">
+  <input type="password" id="newPwd" placeholder="设置新登录密码">
+  <button class="btn" onclick="doReset()">重置密码</button>
+  <a class="link" href="/login">← 返回登录页面</a>
+</div>
+
+<!-- 自定义弹窗 -->
+<div id="myModal">
+  <div class="modal-inner">
+    <h3 id="modalText"></h3>
+    <button class="modal-btn" onclick="closeModal()">确定</button>
+  </div>
+</div>
+
+<script>
+function showModal(msg){
+    document.getElementById("modalText").innerText = msg;
+    document.getElementById("myModal").style.display = "flex";
+}
+function closeModal(){
+    document.getElementById("myModal").style.display = "none";
+}
+
+let countdownTimer = null;
+//发送找回密码验证码
+async function sendResetCode(){
+  const btn = document.getElementById("sendCodeBtn");
+  const email = document.getElementById("email").value.trim();
+  if(!email){
+    showModal("请输入邮箱");
+    return;
+  }
+  try{
+    const res = await fetch("/send-reset-code",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({email})
+    })
+    const d = await res.json();
+    if(d.ok){
+      showModal("✅验证码已发送到邮箱，有效期10分钟");
+      //开启60秒倒计时
+      let count = 60;
+      btn.disabled = true;
+      btn.innerText = `${count}秒后重发`;
+      countdownTimer = setInterval(()=>{
+        count--;
+        btn.innerText = `${count}秒后重发`;
+        if(count <= 0){
+          clearInterval(countdownTimer);
+          btn.disabled = false;
+          btn.innerText = "发送验证码";
+        }
+      },1000);
+    }else{
+      showModal(d.msg);
+    }
+  }catch(e){
+    showModal("网络错误，请确认后端服务运行");
+    console.error(e);
+  }
+}
+
+//执行密码重置
+async function doReset(){
+  const email = document.getElementById("email").value.trim();
+  const code = document.getElementById("code").value.trim();
+  const newPassword = document.getElementById("newPwd").value.trim();
+  if(!email||!code||!newPassword){
+    showModal("邮箱、验证码、新密码不能为空");
+    return;
+  }
+  try{
+    const res = await fetch("/reset-password",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({email,code,newPassword})
+    })
+    const d = await res.json();
+    if(d.ok){
+      showModal("🎉密码重置成功，跳转到登录页");
+      setTimeout(()=>{
+        location.href="/login";
+      },1300)
+    }else{
+      showModal(d.msg);
+    }
+  }catch(e){
+    showModal("请求失败，检查后端是否启动");
+    console.error(e);
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>三角洲行动论坛</title>
+<!--引入socket.io客户端CDN-->
+<script src="/socket.io/socket.io.js"></script>
+<style>
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+  font-family:Microsoft YaHei,system-ui,sans-serif;
+}
+
+body{
+  min-height:100vh;
+  background:linear-gradient(-45deg,#0f0c29,#302b63,#24243e,#1a2980,#26d0ce);
+  background-size:400% 400%;
+  animation:gradientFlow 12s ease infinite;
+  color:#e6edff;
+}
+
+@keyframes gradientFlow{
+  0%{background-position:0% 50%;}
+  50%{background-position:100% 50%;}
+  100%{background-position:0% 50%;}
+}
+
+nav{
+  padding:14px 16px;
+  background:rgba(0,0,0,0.25);
+  backdrop-filter:blur(12px);
+  position:sticky;
+  top:0;
+  z-index:99;
+}
+
+.nav-wrap{
+  max-width:1100px;
+  margin:0 auto;
+  display:flex;
+  gap:12px;
+  align-items:center;
+  flex-wrap:wrap;
+}
+
+nav a{
+  color:#b8c8ff;
+  text-decoration:none;
+  font-size:15px;
+  transition:0.25s;
+}
+
+nav a:hover{
+  color:#00f5a0;
+  text-shadow:0 0 8px rgba(0,245,160,0.5);
+}
+
+.nav-user-text{
+  color:#00f5a0;
+  font-weight:bold;
+  margin-left:auto;
+  font-size:14px;
+}
+
+.nav-time{
+  color:#8ee2ff;
+  font-size:14px;
+  margin-left:10px;
+  letter-spacing:1px;
+}
+
+/*音频按钮样式*/
+.audio-btn{
+  padding:6px 12px;
+  border:none;
+  border-radius:8px;
+  font-weight:bold;
+  cursor:pointer;
+  background:linear-gradient(135deg,#00f5a0,#00d9f5);
+  color:#08111f;
+  font-size:14px;
+  transition:0.25s;
+}
+.audio-btn:hover{
+  transform:translateY(-2px);
+  box-shadow:0 6px 16px rgba(0,245,160,0.35);
+}
+
+.container{
+  max-width:1100px;
+  margin:20px auto;
+  padding:0 14px;
+}
+
+.post-card{
+  background:rgba(255,255,255,0.06);
+  backdrop-filter:blur(20px);
+  border:1px solid rgba(255,255,255,0.11);
+  border-radius:18px;
+  padding:18px;
+  margin-bottom:16px;
+  box-shadow:0 8px 30px rgba(0,0,0,0.25);
+  transition:transform 0.25s ease,box-shadow 0.25s ease;
+}
+
+.post-card:hover{
+  transform:translateY(-4px);
+  box-shadow:0 12px 40px rgba(0,0,0,0.35);
+}
+
+.post-title{
+  font-size:20px;
+  margin-bottom:10px;
+  background:linear-gradient(90deg,#00f5a0,#00d9f5);
+  -webkit-background-clip:text;
+  color:transparent;
+}
+
+.post-meta{
+  font-size:14px;
+  color:#a0b4d8;
+  margin-bottom:14px;
+}
+
+.post-content{
+  line-height:1.7;
+  margin-bottom:14px;
+  font-size:15px;
+}
+
+img.post-img{
+  max-width:100%;
+  border-radius:12px;
+  margin:10px 0;
+}
+
+.comment-box{
+  margin-top:18px;
+  padding-top:18px;
+  border-top:1px solid rgba(255,255,255,0.12);
+}
+
+.comment-item{
+  background:rgba(255,255,255,0.04);
+  border-radius:10px;
+  padding:12px;
+  margin:8px 0;
+  font-size:15px;
+}
+
+textarea{
+  width:100%;
+  padding:14px;
+  background:rgba(255,255,255,0.07);
+  border:1px solid rgba(255,255,255,0.12);
+  border-radius:12px;
+  color:#fff;
+  margin:8px 0;
+  font-size:16px;
+}
+
+.btn{
+  padding:12px 16px;
+  border:none;
+  border-radius:10px;
+  font-weight:bold;
+  cursor:pointer;
+  background:linear-gradient(135deg,#00f5a0,#00d9f5);
+  color:#08111f;
+  transition:0.3s ease;
+  font-size:16px;
+}
+
+.btn:hover{
+  transform:translateY(-2px);
+  box-shadow:0 8px 20px rgba(0,245,160,0.35);
+}
+
+.btn-logout{
+  background:linear-gradient(135deg,#ff4b60,#ff9068);
+  color:#fff;
+  padding:6px 12px;
+  font-size:14px;
+}
+
+.hidden{
+  display:none !important;
+}
+</style>
+</head>
+<body>
+<nav>
+  <div class="nav-wrap">
+    <a href="/">首页</a>
+    <a id="linkCreatePost" href="create-post.html">发布帖子</a>
+
+    <div id="areaGuest">
+      <a href="register.html">注册</a>
+      <a href="login.html">登录</a>
+    </div>
+
+    <div id="areaLogin" class="hidden">
+      <span class="nav-user-text">欢迎：<span id="showUserName"></span></span>
+      <button class="btn btn-logout" onclick="logout()">退出登录</button>
+    </div>
+
+    <button class="audio-btn" id="audioToggleBtn">播放音乐</button>
+    <span class="nav-time" id="navRealTime"></span>
+  </div>
+</nav>
+
+<div class="container">
+  <h2 style="margin-bottom:24px;background:linear-gradient(90deg,#00f5a0,#00d9f5,#ff2a6d);-webkit-background-clip:text;color:transparent;font-size:24px;">三角洲行动论坛</h2>
+  <div id="postList"></div>
+</div>
+
+<script>
+// 连接socket服务
+const socket = io();
+
+// ==========背景音乐MP3==========
+const bgAudio = new Audio();
+bgAudio.src = "/bg.mp3";   //把mp3放到public文件夹
+bgAudio.loop = true;       //循环播放
+const audioToggleBtn = document.getElementById("audioToggleBtn");
+
+audioToggleBtn.addEventListener("click",()=>{
+  if(bgAudio.paused){
+    bgAudio.play();
+    audioToggleBtn.innerText = "暂停音乐";
+  }else{
+    bgAudio.pause();
+    audioToggleBtn.innerText = "播放音乐";
+  }
+});
+// =================================
+
+// ==========后端服务器时间【修复闪烁版本】==========
+let serverTimestamp = 0;
+let clientFetchAt = 0;
+let timeTimer = null;
+
+async function fetchServerTime(){
+  try{
+    const resp = await fetch("/api/server-time");
+    const json = await resp.json();
+    serverTimestamp = json.timestamp;
+    clientFetchAt = Date.now();
+    //第一次拿到服务器时间，启动每秒刷新
+    if(!timeTimer){
+      updateNavTime();
+      timeTimer = setInterval(updateNavTime,1000);
+    }
+  }catch(err){
+    console.warn("获取服务器时间失败，降级本地时间",err);
+    //接口失败，才启用本地时间
+    serverTimestamp = Date.now();
+    clientFetchAt = Date.now();
+    if(!timeTimer){
+      updateNavTime();
+      timeTimer = setInterval(updateNavTime,1000);
+    }
+  }
+}
+
+function getServerNow(){
+  const offset = Date.now() - clientFetchAt;
+  return new Date(serverTimestamp + offset);
+}
+
+function updateNavTime(){
+  const t = getServerNow();
+  document.getElementById("navRealTime").innerText = t.toLocaleString();
+}
+
+//页面启动：只发请求，不立刻渲染时间，避免闪现本地时间
+fetchServerTime();
+//后台每8秒同步一次服务器时间
+setInterval(fetchServerTime,8000);
+// ==========================================
+
+let user = JSON.parse(localStorage.getItem("forum_user")||"null");
+
+function renderNav(){
+  const createPostLink = document.getElementById("linkCreatePost");
+  if(user){
+    document.getElementById("areaGuest").classList.add("hidden");
+    document.getElementById("areaLogin").classList.remove("hidden");
+    document.getElementById("showUserName").innerText = user.username;
+    createPostLink.classList.remove("hidden");
+  }else{
+    document.getElementById("areaGuest").classList.remove("hidden");
+    document.getElementById("areaLogin").classList.add("hidden");
+    //未登录隐藏发布帖子
+    createPostLink.classList.add("hidden");
+  }
+}
+
+function logout(){
+  localStorage.removeItem("forum_user");
+  location.reload();
+}
+
+//加载帖子
+async function loadPosts(){
+  try{
+    const res = await fetch("/post-list");
+    const list = await res.json();
+    const dom = document.getElementById("postList");
+    dom.innerHTML = "";
+
+    if(list.length === 0){
+      dom.innerHTML = `<p style="color:#a0b4d8;">暂无帖子，请先发布帖子。</p>`;
+      return;
+    }
+
+    list.forEach(p=>{
+      let html = `
+      <div class="post-card" data-postid="${p.id}">
+        <div class="post-title">${p.title}</div>
+        <div class="post-meta">👤 ${p.username}</div>
+        <div class="post-content">${p.content}</div>
+        ${p.img_url ? `<img class="post-img" src="${p.img_url}">`:""}
+        ${p.audio_url ? `<audio controls style="width:100%;margin:10px 0;"><source src="${p.audio_url}">`:""}
+        <div class="comment-box">
+          <textarea id="inp_${p.id}" placeholder="写下你的评论..."></textarea>
+          <button class="btn" onclick="addComment(${p.id})">提交评论</button>
+          <div id="com_${p.id}"></div>
+        </div>
+      </div>`;
+      dom.innerHTML += html;
+      loadComment(p.id);
+    })
+  }catch(e){
+    console.error("加载帖子失败",e);
+    document.getElementById("postList").innerHTML = `<p style="color:#ff4b60;">帖子加载失败，请重启服务并刷新页面。</p>`;
+  }
+}
+
+async function loadComment(postId){
+  const r = await fetch("/comment?postId="+postId);
+  const arr = await r.json();
+  const box = document.getElementById("com_"+postId);
+  box.innerHTML = "";
+  arr.forEach(c=>{
+    box.innerHTML += `<div class="comment-item"><b>${c.username}</b>：${c.content}</div>`
+  })
+}
+
+async function addComment(postId){
+  if(!user){
+    alert("请先登录");
+    location.href="login.html";
+    return;
+  }
+  const text = document.getElementById("inp_"+postId).value.trim();
+  if(!text) return;
+
+  await fetch("/comment-add",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({post_id:postId,username:user.username,content:text})
+  })
+
+  document.getElementById("inp_"+postId).value="";
+}
+
+//socket监听事件
+socket.on("new_post",()=>{
+  loadPosts();
+})
+socket.on("new_comment",(data)=>{
+  loadComment(data.post_id);
+})
+
+renderNav();
+loadPosts();
+</script>
+</body>
+</html>

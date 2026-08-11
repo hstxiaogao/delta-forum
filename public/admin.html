@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>三角洲论坛-管理后台</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:Microsoft YaHei}
+body{
+    background: linear-gradient(135deg,#12151e,#1a1d26,#202533);
+    color:#eee;
+    padding:4px 24px 24px;
+    min-height:100vh;
+}
+.box{
+    max-width:1240px;
+    margin:0 auto;
+    margin-top:4px;
+}
+
+/* 实时时间头部 */
+.top-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:16px;
+    padding:14px 20px;
+    background:rgba(39,43,54,0.65);
+    border-radius:12px;
+    border:1px solid rgba(60,88,220,0.25);
+    box-shadow: 0 0 18px rgba(37,99,235,0.12);
+    backdrop-filter: blur(8px);
+    gap:16px;
+}
+.header-right-group{
+    display:flex;
+    align-items:center;
+    gap:12px;
+}
+.time-text{
+    font-size:17px;
+    color:#73b0ff;
+    font-weight:500;
+    letter-spacing:1px;
+}
+.audio-btn{
+    padding:6px 12px;
+    font-size:14px;
+    background:#2563eb;
+    border-radius:6px;
+    border:none;
+    color:#fff;
+    cursor:pointer;
+}
+.audio-btn:hover{
+    box-shadow:0 0 10px #2563eb77;
+}
+.qishui-btn{
+    padding:6px 12px;
+    font-size:14px;
+    background:#00c087;
+    border-radius:6px;
+    border:none;
+    color:#fff;
+    cursor:pointer;
+}
+.qishui-btn:hover{
+    box-shadow:0 0 10px #00c08777;
+}
+
+h2{
+    margin-bottom:8px;
+    background: linear-gradient(90deg,#4299ff,#36d1dc);
+    -webkit-background-clip:text;
+    color:transparent;
+}
+
+/*登录框 入场缩放淡入动画*/
+.login-wrap{
+    max-width:440px;
+    margin:30px auto;
+    background:rgba(39,43,54,0.72);
+    padding:34px;
+    border-radius:14px;
+    border:1px solid rgba(66,153,255,0.22);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.45), 0 0 24px rgba(37,99,235,0.15);
+    backdrop-filter: blur(10px);
+    animation: loginIn 0.6s ease-out;
+}
+@keyframes loginIn {
+    0%{opacity:0;transform:scale(0.86) translateY(20px);}
+    100%{opacity:1;transform:scale(1) translateY(0);}
+}
+
+input{
+    width:100%;
+    padding:13px 16px;
+    margin:9px 0;
+    background:#2c313f;
+    border:1px solid #444a58;
+    color:#fff;
+    border-radius:8px;
+    font-size:15px;
+    transition: 0.3s ease;
+}
+input:focus{
+    outline:none;
+    border-color:#2563eb;
+    box-shadow:0 0 0 3px rgba(37,99,235,0.25);
+}
+
+button{
+    padding:12px 20px;
+    border:none;
+    border-radius:8px;
+    background:#2563eb;
+    color:#fff;
+    cursor:pointer;
+    font-size:15px;
+    margin:4px;
+    transition: all 0.28s ease;
+}
+button:hover{
+    transform: translateY(-2px);
+    box-shadow: 0 4px 14px rgba(37,99,235,0.4);
+}
+button:active{
+    transform: translateY(1px);
+}
+button.del{background:#dc2626;}
+button.del:hover{box-shadow:0 4px 14px rgba(220,38,38,0.45);}
+button.success{background:#059669}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+    margin:12px 0;
+    background:rgba(39,43,54,0.6);
+    border-radius:10px;
+    overflow:hidden;
+    border:1px solid rgba(70,78,95,0.35);
+    box-shadow:0 4px 22px rgba(0,0,0,0.35);
+}
+th,td{
+    border:1px solid #3a404f;
+    padding:14px;
+    text-align:left;
+    font-size:14px;
+}
+th{
+    background:#2f3442;
+    color:#94c0ff;
+}
+tbody tr{
+    transition:0.25s ease;
+}
+tbody tr:hover{
+    background:rgba(55,65,90,0.55);
+}
+
+.hide{
+    opacity:0;
+    height:0;
+    overflow:hidden;
+    pointer-events:none;
+    transition: 0.35s all ease;
+}
+.tab-panel{
+    transition:0.35s ease;
+}
+
+.tabs{
+    margin:10px 0;
+    display:flex;
+    gap:8px;
+}
+.tabs button{
+    background:#374151;
+}
+.tabs button.active{
+    background:#2563eb;
+    box-shadow:0 0 14px rgba(37,99,235,0.4);
+}
+h3{
+    color:#b8d4ff;
+    margin-top:6px;
+    margin-bottom:8px;
+}
+</style>
+</head>
+<body>
+<div class="box">
+    <div id="loginBox" class="login-wrap">
+        <h2>管理员登录</h2>
+        <input type="text" id="adminAcc" placeholder="管理员账号">
+        <input type="password" id="adminPwd" placeholder="管理员密码">
+        <button onclick="adminLogin()" style="width:100%">登录后台</button>
+    </div>
+
+    <div id="mainBox" class="hide">
+        <div class="top-header">
+            <h2>🔧三角洲论坛管理后台</h2>
+            <div class="header-right-group">
+                <div class="time-text" id="nowTime"></div>
+                <button class="audio-btn" id="musicBtn">▶播放BGM</button>
+                <button class="qishui-btn" onclick="openQiShui()">🎵汽水音乐</button>
+            </div>
+        </div>
+
+        <div class="tabs">
+            <button class="active" onclick="switchTab('user')">用户管理</button>
+            <button onclick="switchTab('post')">帖子管理</button>
+            <button onclick="logoutAdmin()">退出登录</button>
+        </div>
+
+        <!-- 用户管理【新增邮箱列】 -->
+        <div id="tab-user" class="tab-panel">
+            <h3>用户列表（ID｜用户名｜绑定邮箱｜操作）</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>用户名</th>
+                        <th>绑定邮箱</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="userTableBody"></tbody>
+            </table>
+        </div>
+
+        <!-- 帖子管理 -->
+        <div id="tab-post" class="tab-panel hide">
+            <h3>帖子列表</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>发布人</th>
+                        <th>标题</th>
+                        <th>发布时间</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="postTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<audio id="bgmAudio" loop preload="auto">
+    <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg">
+
+
+<script>
+const base="/api/admin";
+const audio = document.getElementById('bgmAudio');
+const musicBtn = document.getElementById('musicBtn');
+let isPlay = false;
+
+//打开汽水音乐网页版
+function openQiShui(){
+    //汽水音乐官方网页版
+    window.open("https://music.douyin.com/","_blank");
+}
+
+musicBtn.addEventListener('click',()=>{
+    if(!isPlay){
+        audio.play();
+        musicBtn.innerText="⏸暂停BGM";
+        isPlay=true;
+    }else{
+        audio.pause();
+        musicBtn.innerText="▶播放BGM";
+        isPlay=false;
+    }
+})
+
+//实时时间
+function updateTime(){
+    const d=new Date();
+    document.getElementById("nowTime").innerText = d.toLocaleString('zh-CN');
+}
+updateTime();
+setInterval(updateTime,1000);
+
+//登录
+async function adminLogin(){
+    const acc = document.getElementById("adminAcc").value.trim();
+    const pwd = document.getElementById("adminPwd").value.trim();
+    const res = await fetch(base+"/login",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({account:acc,pwd})
+    })
+    const data = await res.json();
+    if(data.ok){
+        document.getElementById("loginBox").classList.add("hide");
+        document.getElementById("mainBox").classList.remove("hide");
+        loadUserList();
+        loadPostList();
+    }else{
+        alert(data.msg||"登录失败")
+    }
+}
+
+//切换标签
+function switchTab(type){
+    document.getElementById("tab-user").classList.add("hide");
+    document.getElementById("tab-post").classList.add("hide");
+    document.getElementById("tab-"+type).classList.remove("hide");
+    if(type==="user") loadUserList();
+    if(type==="post") loadPostList();
+}
+
+//加载用户列表（显示邮箱）
+async function loadUserList(){
+    const res = await fetch(base+"/users");
+    const data = await res.json();
+    const tb = document.getElementById("userTableBody");
+    tb.innerHTML="";
+    data.list.forEach(u=>{
+        const tr = document.createElement("tr");
+        tr.innerHTML=`
+        <td>${u.id}</td>
+        <td>${escapeHtml(u.username)}</td>
+        <td>${escapeHtml(u.email)}</td>
+        <td>
+            <button onclick="resetPwd(${u.id})">重置密码</button>
+            <button class="del" onclick="delUser(${u.id})">删除用户</button>
+        </td>`;
+        tb.appendChild(tr);
+    })
+}
+
+//加载帖子
+async function loadPostList(){
+    const res = await fetch(base+"/posts");
+    const data = await res.json();
+    const tb = document.getElementById("postTableBody");
+    tb.innerHTML="";
+    data.list.forEach(p=>{
+        const tr = document.createElement("tr");
+        tr.innerHTML=`
+        <td>${p.id}</td>
+        <td>${escapeHtml(p.username)}</td>
+        <td>${escapeHtml(p.title)}</td>
+        <td>${p.create_time}</td>
+        <td><button class="del" onclick="delPost(${p.id})">删除帖子</button></td>`;
+        tb.appendChild(tr);
+    })
+}
+
+//重置密码
+async function resetPwd(uid){
+    const newPwd = prompt("输入新密码：");
+    if(!newPwd) return;
+    await fetch(base+"/user/password",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({userId:uid,newPwd})
+    })
+    alert("已重置");loadUserList();
+}
+
+//删除用户
+async function delUser(uid){
+    if(!confirm("确认删除该用户？"))return;
+    await fetch(base+"/user/"+uid,{method:"DELETE"});
+    loadUserList();
+}
+
+//删除帖子
+async function delPost(pid){
+    if(!confirm("确认删除帖子？"))return;
+    await fetch(base+"/post/"+pid,{method:"DELETE"});
+    loadPostList();
+}
+
+//退出登录
+async function logoutAdmin(){
+    await fetch(base+"/logout",{method:"POST"});
+    location.reload();
+}
+
+function escapeHtml(str){
+    if(!str)return "";
+    return String(str).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+}
+</script>
+</body>
+</html>
